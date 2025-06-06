@@ -1,7 +1,9 @@
 package com.codewitharrays.serviceImpl;
 
+
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,7 @@ import com.codewitharrays.entity.Category;
 import com.codewitharrays.repository.CategoryRepository;
 import com.codewitharrays.service.CategoryService;
 
-import lombok.With;
+
 
 @Service
 public class CategoryServiceImpl  implements CategoryService{
@@ -26,7 +28,7 @@ public class CategoryServiceImpl  implements CategoryService{
 	private ModelMapper mapper;
 	
 	@Override
-	public boolean saveCategory(CategoryDTO categoryDto) {
+	public Boolean saveCategory(CategoryDTO categoryDto) {
 			
 //		Without model mapper
 //			Category category=new Category();
@@ -52,7 +54,7 @@ public class CategoryServiceImpl  implements CategoryService{
 
 	@Override
 	public List<CategoryDTO> getAllCategory() {
-			List<Category> allCategories = categoryRepository.findAll();
+			List<Category> allCategories = categoryRepository.findByIsDeleteFalse();
 			List<CategoryDTO> categoryDtoList = 
 					allCategories.stream().map(e->mapper.map(e, CategoryDTO.class))
 										  .toList();
@@ -62,9 +64,31 @@ public class CategoryServiceImpl  implements CategoryService{
 	@Override
 	public List<CategoryResponse> getActiveCategory() {
 		
-		List<Category> categories = categoryRepository.findByIsActiveTrue();
+		List<Category> categories = categoryRepository.findByIsActiveTrueAndIsDeleteFalse();
 		List<CategoryResponse> categoryResponses = categories.stream().map(e->mapper.map(e, CategoryResponse.class)).toList();
 		return categoryResponses;
+	}
+
+	@Override
+	public CategoryDTO getCategoryById(Integer id) {
+			Optional<Category> optional = categoryRepository.findByIdAndIsDeleteFalse(id);
+			if (optional.isPresent()) {
+					Category category = optional.get();
+				return mapper.map(category, CategoryDTO.class);
+			}
+			return null;
+	}
+
+	@Override
+	public Boolean deleteCategoryById(Integer id) {
+		Optional<Category> optional = categoryRepository.findById(id);
+		if (optional.isPresent()) {
+			Category category = optional.get();
+			category.setIsDelete(true);
+			categoryRepository.save(category);
+			return true;
+		}
+		return false;
 	}
 	
 	
