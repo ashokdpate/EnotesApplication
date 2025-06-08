@@ -64,7 +64,7 @@ public class CategoryController {
 	}
 	
 	@GetMapping("/{id}")
-	public ResponseEntity<?> getCategoryDetailsById(@PathVariable Integer id){
+	public ResponseEntity<?> getCategoryDetailsById(@PathVariable Integer id) throws Exception{
 			CategoryDTO categoryDto = categoryService.getCategoryById(id);
 			if (ObjectUtils.isEmpty(categoryDto)) {
 				return new ResponseEntity<>("category not found id:"+id, HttpStatus.NOT_FOUND);
