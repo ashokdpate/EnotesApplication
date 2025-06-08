@@ -13,6 +13,7 @@ import org.springframework.util.ObjectUtils;
 import com.codewitharrays.dto.CategoryDTO;
 import com.codewitharrays.dto.CategoryResponse;
 import com.codewitharrays.entity.Category;
+import com.codewitharrays.exception.ResourceNotFoundException;
 import com.codewitharrays.repository.CategoryRepository;
 import com.codewitharrays.service.CategoryService;
 
@@ -61,7 +62,7 @@ public class CategoryServiceImpl  implements CategoryService{
 	private void updateCategory(Category category) {
 					Optional<Category> optional = categoryRepository.findById(category.getId());
 					if (optional.isPresent()) {
-						Category existCategory = optional.get();
+						Category existCategory = optional.get();			
 						category.setIsDelete(existCategory.getIsDelete());
 						category.setCreatedBy(existCategory.getCreatedBy());
 						category.setCreatedDate(existCategory.getCreatedDate());
@@ -89,10 +90,10 @@ public class CategoryServiceImpl  implements CategoryService{
 	}
 
 	@Override
-	public CategoryDTO getCategoryById(Integer id) {
-			Optional<Category> optional = categoryRepository.findByIdAndIsDeleteFalse(id);
-			if (optional.isPresent()) {
-					Category category = optional.get();
+	public CategoryDTO getCategoryById(Integer id) throws Exception {
+			 Category category = categoryRepository.findByIdAndIsDeleteFalse(id)
+					.orElseThrow(()-> new ResourceNotFoundException("Category not found with id="+id));
+			if (!ObjectUtils.isEmpty(category)) {
 				return mapper.map(category, CategoryDTO.class);
 			}
 			return null;
