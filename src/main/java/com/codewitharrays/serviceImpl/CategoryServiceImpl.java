@@ -13,6 +13,7 @@ import org.springframework.util.ObjectUtils;
 import com.codewitharrays.dto.CategoryDTO;
 import com.codewitharrays.dto.CategoryResponse;
 import com.codewitharrays.entity.Category;
+import com.codewitharrays.exception.ExistDataException;
 import com.codewitharrays.exception.ResourceNotFoundException;
 import com.codewitharrays.repository.CategoryRepository;
 import com.codewitharrays.service.CategoryService;
@@ -38,13 +39,15 @@ public class CategoryServiceImpl  implements CategoryService{
 //			category.setIsActive(categoryDto.getIsActive());
 		
 //		With model  mapper in one line
-		
+			Boolean exsit=	categoryRepository.existsByName(categoryDto.getName().trim());
+			if (exsit) {
+				throw  new ExistDataException("category already exist");
+			}
 			Category category = mapper.map(categoryDto, Category.class);
 			
 			if(ObjectUtils.isEmpty(category.getId())) {
 				category.setIsDelete(false);
-				category.setIsActive(true);
-				category.setCreatedBy(1);
+				
 				category.setCreatedDate(new Date());
 			}else {
 				updateCategory(category);
@@ -67,8 +70,7 @@ public class CategoryServiceImpl  implements CategoryService{
 						category.setCreatedBy(existCategory.getCreatedBy());
 						category.setCreatedDate(existCategory.getCreatedDate());
 						
-						category.setUpdatedBy(1);
-						category.setUpdatedDate(new Date()); 
+						
 					}
 	}
 
