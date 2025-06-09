@@ -20,6 +20,15 @@ public class NotesDTO {
 	private Integer updatedBy;
 	private Date updatedDate;
 	
+	private FileDto fileDetails;
+	@Data
+	public static class FileDto{
+		private Integer id;	
+		private String originalFileName;
+		private String displayFileName;
+	}
+	
+	
 	@Data
 	public static class CategoryDTO{
 		private Integer id;
