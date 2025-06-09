@@ -1,5 +1,6 @@
 package com.codewitharrays.exception;
 
+import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,11 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleExistDataException(ExistDataException e){
 		log.error("GlobalException handler:: handleExistDataException :: ",e.getMessage());
 		return new ResponseEntity<>(e.getMessage(),HttpStatus.CONFLICT);
+	}
+	
+	@ExceptionHandler(FileNotFoundException.class)
+	public ResponseEntity<?> handleFileNotFoundException(FileNotFoundException e) {
+		return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);	
 	}
 	
 	
