@@ -5,8 +5,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
+
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,14 +16,19 @@ import org.apache.commons.io.FilenameUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.codewitharrays.dto.CategoryDTO;
+
 import com.codewitharrays.dto.NotesDTO;
-import com.codewitharrays.entity.Category;
+import com.codewitharrays.dto.NotesDTO.FileDto;
+import com.codewitharrays.dto.NotesResponse;
 import com.codewitharrays.entity.FileDetails;
 import com.codewitharrays.entity.Notes;
 import com.codewitharrays.exception.ResourceNotFoundException;
@@ -54,7 +61,8 @@ public class NotesServiceImpl implements NotesService{
 		
 		ObjectMapper obj= new ObjectMapper();
 		NotesDTO notesDTO = obj.readValue(notes, NotesDTO.class);
-		
+		notesDTO.setIsDelete(false);
+		notesDTO.setDeletedOn(null);
 		
 		
 		checkCategoryExist(notesDTO.getCategory());
@@ -66,7 +74,10 @@ public class NotesServiceImpl implements NotesService{
 					notesMap.setFileDetails(fileDetails);
 				}	
 				else {
-					notesMap.setFileDetails(null);
+					if (ObjectUtils.isEmpty(notesDTO.getId())) {
+						notesMap.setFileDetails(null);
+					}
+					
 				}
 		
 		
@@ -75,6 +86,19 @@ public class NotesServiceImpl implements NotesService{
 			return true;
 		}
 		return false;
+	}
+	
+	private void updateNotes(NotesDTO notesDto, MultipartFile file) throws Exception {
+
+		Notes existNotes = notesRepository.findById(notesDto.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Invalid Notes id"));
+
+		// user not choose any file at update time
+		if (ObjectUtils.isEmpty(file)) {
+				notesDto.setFileDetails(mapper.map(existNotes.getFileDetails(), FileDto.class));
+			
+		}
+
 	}
 
 	private FileDetails saveFileDetails(MultipartFile file) throws IOException {
@@ -165,5 +189,72 @@ public class NotesServiceImpl implements NotesService{
 		List<NotesDTO> list = allNotes.stream().map(notes-> mapper.map(notes, NotesDTO.class)).toList();
 		return list;
 	}
+	
+	public NotesResponse getAllNotesByUser(Integer userId,Integer pageNo,Integer pageSize) {
+		
+		PageRequest pageable = PageRequest.of(pageNo, pageSize);
+		Page<Notes> pageNotes =notesRepository.findByCreatedByAndIsDeleteFalse(userId,pageable);
+	
+		List<NotesDTO> notesDTO = pageNotes.get().map(n->mapper.map(n, NotesDTO.class)).toList();
+		
+		NotesResponse notes = NotesResponse.builder().notes(notesDTO)
+		.pageNo(pageNotes.getNumber())
+		.pageSize(pageNotes.getSize())
+		.totalElements(pageNotes.getTotalElements())
+		.totalPages(pageNotes.getTotalPages())
+		.isFirst(pageNotes.isFirst())
+		.isLast(pageNotes.isLast())
+		.build();
+		return notes;
+	}
+
+	@Override
+	public void softDeleteNotes(Integer id) throws Exception {
+		Notes notes = notesRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Notes id is invalid"));
+		notes.setIsDelete(true);
+		notes.setDeletedOn(LocalDateTime.now());
+		notesRepository.save(notes);
+	}
+
+	@Override
+	public void restoreNotes(Integer id) throws Exception {
+		Notes restoreNotes = notesRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("notes not available in recyle bin"));
+		restoreNotes.setIsDelete(false);
+		restoreNotes.setDeletedOn(null);
+		notesRepository.save(restoreNotes);
+	}
+
+	@Override
+	public List<NotesDTO> getuserRecycleBinNotes(Integer userId) {
+		
+		//notes is created by user and isdelete true only this data get
+		List<Notes> recycleNotes = notesRepository.findByCreatedByAndIsDeleteTrue(userId);
+		List<NotesDTO> list = recycleNotes.stream().map(note->mapper.map(recycleNotes, NotesDTO.class)).toList();
+		return list;
+	}
+
+	@Override
+	public void hardDeleteNotes(Integer id) throws Exception {
+		Notes notes = notesRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Notes not found"));
+		if (notes.getIsDelete()) {
+			notesRepository.delete(notes);
+		}
+		else {
+			throw new IllegalArgumentException("Sorry you cant hard delete directly");
+		}
+	}
+
+	@Override
+	public void emptyRecyleBin(Integer userId) {
+		List<Notes> recycleNotes = notesRepository.findByCreatedByAndIsDeleteTrue(userId);
+		if (!CollectionUtils.isEmpty(recycleNotes)) {
+			notesRepository.deleteAll(recycleNotes);
+		}
+	}
+	
+	
+	
+	
+	
 
 }

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.codewitharrays.dto.CategoryDTO;
 import com.codewitharrays.dto.CategoryResponse;
-import com.codewitharrays.entity.Category;
+
 import com.codewitharrays.service.CategoryService;
 
 @RestController

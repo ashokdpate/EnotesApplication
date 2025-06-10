@@ -1,5 +1,6 @@
 package com.codewitharrays.dto;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 
@@ -19,6 +20,9 @@ public class NotesDTO {
 	private Date createdDate;
 	private Integer updatedBy;
 	private Date updatedDate;
+	private Boolean isDelete;
+
+	private LocalDateTime deletedOn;
 	
 	private FileDto fileDetails;
 	@Data
