@@ -16,7 +16,7 @@ public class NotesScheduler {
 	@Autowired
 	private NotesRepository notesRepository;
 	
-	@Scheduled(cron = "0 0 0 * * *")
+	@Scheduled(cron = "0 0 0 * * ?")
 	public void deleteNotesScheduler() {
 		LocalDateTime cuttOfDays = LocalDateTime.now().minusDays(7);
 		List<Notes> deletedNotes =	notesRepository.findAllByIsDeleteAndDeletedOnBefore(true,cuttOfDays);
